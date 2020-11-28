@@ -1,6 +1,9 @@
 import torch
 import time
-import logger
+import numpy as np
+import random
+from logger import *
+
 
 def get_ms():
     """Returns the current time in miliseconds."""
