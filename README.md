@@ -1,2 +1,2 @@
 # XMANN
-External Memory and Neural Networks
+Xternal Memory and Neural Networks
