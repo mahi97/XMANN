@@ -195,4 +195,4 @@ def train_model(model, args):
         # Checkpoint
         if (checkpoint_interval != 0) and (batch_num % checkpoint_interval == 0):
             save_checkpoint(model.net, model.params.name, batch_num, losses, costs, seq_lengths, repeats,
-                            checkpoint_path)
+                            checkpoint_path, seed)

@@ -15,7 +15,7 @@ CHECKPOINT_INTERVAL = 1000
 
 
 def init_arguments():
-    parser = argparse.ArgumentParser(prog='train.py')
+    parser = argparse.ArgumentParser(prog='main.py')
     parser.add_argument('--seed', type=int, default=RANDOM_SEED, help="Seed value for RNGs")
     parser.add_argument('--task', action='store', choices=list(TASKS.keys()), default='copy',
                         help="Choose the task to train (default: copy)")

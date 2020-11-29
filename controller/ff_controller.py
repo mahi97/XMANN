@@ -18,7 +18,6 @@ class FFController(BaseController):
         nn.init.xavier_uniform_(self.fc2.weight, gain=1.4)
         nn.init.normal_(self.fc2.bias, std=0.01)
 
-
     def forward(self, x):
         out = self.fc1(x)
         out = self.sigmoid(out)

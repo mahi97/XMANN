@@ -3,18 +3,22 @@ import time
 import numpy as np
 import random
 from logger import *
+import json
 
+
+SEED = 1
 
 def get_ms():
-    """Returns the current time in miliseconds."""
+    """Returns the current time in milliseconds."""
     return time.time() * 1000
 
 
 def init_seed(seed=None):
-    """Seed the RNGs for predicatability/reproduction purposes."""
+    global SEED
+    """Seed the RNGs for predictability/reproduction purposes."""
     if seed is None:
         seed = int(get_ms() // 1000)
-
+    SEED = seed
     LOGGER.info("Using seed=%d", seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -35,6 +39,7 @@ def progress_bar(batch_num, report_interval, last_loss):
 
 
 def save_checkpoint(net, name, batch_num, losses, costs, seq_lengths, repeats=1, checkpoint_path='./'):
+    global SEED
     progress_clean()
 
     basename = "{}/{}-{}-batch-{}".format(checkpoint_path, name, SEED, batch_num)
