@@ -2,17 +2,18 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from attr import attrs, attrib, Factory
 
 
 class BaseHead(nn.Module):
-    def __init__(self, memory, controller, is_cuda):
+    def __init__(self, args):
         super(BaseHead, self).__init__()
 
-        self.memory = memory
-        _, self.ctrl_size = controller.size()
-        self.M = memory.M
-        self.N = memory.N
-        self.is_cuda = is_cuda
+        self.memory = args.memory
+        _, self.ctrl_size = args.controller.size()
+        self.M = self.memory.M
+        self.N = self.memory.N
+        self.is_cuda = args.is_cuda
 
     def create_new_state(self, batch_size):
         raise NotImplementedError
@@ -28,7 +29,7 @@ class BaseHead(nn.Module):
 
     def _address_memory(self, k, B, g, s, L, w_prev):
         # Handle Activations
-        k = F.tanh(k)
+        k = torch.tanh(k)
         B = F.softplus(B)
         g = torch.sigmoid(g)
         s = F.softmax(s, dim=1)
@@ -47,3 +48,10 @@ def split_cols(mat, lengths):
     for s, e in zip(l[:-1], l[1:]):
         results += [mat[:, s:e]]
     return results
+
+
+@attrs
+class HeadsParams(object):
+    controller = attrib(default=None)
+    memory = attrib(default=None)
+    is_cuda = attrib(default=False, converter=bool)

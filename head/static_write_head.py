@@ -2,8 +2,8 @@ from head.base_head import *
 
 
 class StaticWriteHead(BaseHead):
-    def __init__(self, memory, controller, is_cuda):
-        super(StaticWriteHead, self).__init__(memory, controller, is_cuda)
+    def __init__(self, args):
+        super(StaticWriteHead, self).__init__(args)
 
         #                     K, B, G, S, L, add, erase
         self.write_vector = [self.M, 1, 1, 3, 1, self.M, self.M]
@@ -27,5 +27,5 @@ class StaticWriteHead(BaseHead):
         out = self.fc_write(input)
         K, B, G, S, L, A, E = split_cols(out, self.write_vector)
         w = self._address_memory(K, B, G, S, L, last_w)
-        self.memory.write(w, torch.sigmoid(E), F.tanh(A))
+        self.memory.write(w, torch.sigmoid(E), torch.tanh(A))
         return w

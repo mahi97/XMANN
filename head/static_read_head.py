@@ -2,8 +2,8 @@ from head.base_head import *
 
 
 class StaticReadHead(BaseHead):
-    def __init__(self, memory, controller, is_cuda):
-        super(StaticReadHead, self).__init__(memory, controller, is_cuda)
+    def __init__(self, args):
+        super(StaticReadHead, self).__init__(args)
 
         # Corresponding to k, β, g, s, γ sizes from the paper
         self.read_vector = [self.M, 1, 1, 3, 1]
