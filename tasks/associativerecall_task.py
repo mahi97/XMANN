@@ -8,9 +8,17 @@ import torch
 from torch import nn
 from torch import optim
 
+from network.networks import NETWORKS
+
+
+class AssociativeRecallTask:
+    def __init__(self):
+        self.model = AssociativeRecallTaskModel
+        self.param = AssociativeRecallTaskParams
+
 
 # Generator of randomized test sequences
-def recall_dataloader(num_batches, batch_size, seq_width, seq_len, repeat_min, repeat_max):
+def data_loader(num_batches, batch_size, seq_width, seq_len, repeat_min, repeat_max):
     """Generator of random sequences for the Associative Recall task.
     Creates random batches of "bits" sequences.
     All the sequences within each batch have the same length.
@@ -32,8 +40,6 @@ def recall_dataloader(num_batches, batch_size, seq_width, seq_len, repeat_min, r
     for batch_num in range(num_batches):
 
         # All batches have the same sequence length and number of reps
-        seq_len = 3  # random.randint(seq_min_len, seq_max_len)
-        seq_width = 6
         reps = np.random.randint(repeat_min, repeat_max + 1)
 
         # Generate the sequence
@@ -73,6 +79,7 @@ def recall_dataloader(num_batches, batch_size, seq_width, seq_len, repeat_min, r
 @attrs
 class AssociativeRecallTaskParams(object):
     name = attrib(default="recall-task")
+    network = attrib(default='NTM', converter=str)
     controller_size = attrib(default=100, converter=int)
     controller_layers = attrib(default=1, converter=int)
     num_read_heads = attrib(default=1, converter=int)
@@ -88,33 +95,34 @@ class AssociativeRecallTaskParams(object):
     rmsprop_lr = attrib(default=1e-4, converter=float)
     rmsprop_momentum = attrib(default=0.9, converter=float)
     rmsprop_alpha = attrib(default=0.95, converter=float)
+    is_cuda = attrib(default=False, converter=bool)
 
 
 @attrs
-class AssociativeRecallTaskModelTraining(object):
+class AssociativeRecallTaskModel(object):
     params = attrib(default=Factory(AssociativeRecallTaskParams))
     net = attrib()
-    dataloader = attrib()
+    data_loader = attrib()
     criterion = attrib()
     optimizer = attrib()
 
     @net.default
     def default_net(self):
         # See dataloader documentation
-        net = NTM(self.params.sequence_width + 2, self.params.sequence_width + 2,
+        net = NETWORKS[self.params.network](self.params.sequence_width + 2, self.params.sequence_width + 2,
                   self.params.controller_size, self.params.controller_layers,
                   self.params.num_read_heads, self.params.num_write_heads,
                   self.params.memory_n, self.params.memory_m)
-        if CUDA:
+        if self.params.is_cuda:
             net = net.cuda()
         return net
 
-    @dataloader.default
-    def default_dataloader(self):
-        return recall_dataloader(self.params.num_batches,
-                                 self.params.batch_size,
-                                 self.params.sequence_width, self.params.sequence_len,
-                                 self.params.repeat_min, self.params.repeat_max)
+    @data_loader.default
+    def default_data_loader(self):
+        return data_loader(self.params.num_batches,
+                           self.params.batch_size,
+                           self.params.sequence_width, self.params.sequence_len,
+                           self.params.repeat_min, self.params.repeat_max)
 
     @criterion.default
     def default_criterion(self):
