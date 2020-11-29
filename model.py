@@ -3,9 +3,12 @@ import torch.nn as nn
 
 from controller.controllers import *
 from memory.memories import *
+from head.heads import *
 
+from head.base_head import HeadsParams
 from memory.base_memory import MemoryParams
 from controller.base_controller import ControllerParams
+
 
 from attr import attrs, attrib, Factory
 
@@ -46,6 +49,11 @@ class BaseNetwork(nn.Module):
                                              args.num_layers)
         self.controller = CONTROLLERS[args.controller](controller_params)
 
+        head_params = HeadsParams(controller=self.controller, memory=self.memory, is_cuda=args.is_cuda)
+        self.heads = nn.ModuleList([HEADS[args.read_head](head_params) for _ in range(args.num_read_heads)])
+        self.heads += [HEADS[args.write_head](head_params) for _ in range(args.num_write_heads)]
+
+        self.data_path = DataPath(num_inputs, num_outputs, controller, memory, heads)
     def calculate_num_params(self):
         """Returns the total number of parameters."""
         num_params = 0
@@ -64,6 +72,8 @@ class NetworkParams(object):
     num_hidden = attrib(default=-1, converter=int)
     num_layers = attrib(default=-1, converter=int)
     controller_size = attrib(default=-1, converter=int)
+    read_head = attrib(default='static-read')
+    write_head = attrib(default='static-write')
     num_read_heads = attrib(default=-1, converter=int)
     num_write_heads = attrib(default=-1, converter=int)
     memory_size = attrib(default=-1, converter=int)
