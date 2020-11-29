@@ -8,9 +8,17 @@ import torch
 from torch import nn
 from torch import optim
 
+from network.networks import NETWORKS
+from network.base_network import NetworkParams
 
-# Generator of randomized test sequences
-def dataloader(num_batches, batch_size, seq_width, min_len, max_len, is_cuda=False):
+
+class CopyTask(object):
+    def __init__(self):
+        self.model = CopyTaskModel
+        self.param = CopyTaskParams
+
+
+def data_loader(num_batches, batch_size, seq_width, min_len, max_len, is_cuda=False):
     """Generator of random sequences for the copy task.
     Creates random batches of "bits" sequences.
     All the sequences within each batch have the same length.
@@ -46,8 +54,10 @@ def dataloader(num_batches, batch_size, seq_width, min_len, max_len, is_cuda=Fal
 @attrs
 class CopyTaskParams(object):
     name = attrib(default="copy-task")
-    controller_type = attrib(default='LSTM', converter=str)
-    architecture = attrib(default='NTM', converter=str)
+    memory = attrib(default='static')
+    memory_init = attrib(default='const')
+    controller = attrib(default='LSTM')
+    network = attrib(default='NTM')
     controller_size = attrib(default=100, converter=int)
     controller_layers = attrib(default=1, converter=int)
     num_read_heads = attrib(default=1, converter=int)
@@ -62,13 +72,14 @@ class CopyTaskParams(object):
     rmsprop_lr = attrib(default=1e-4, converter=float)
     rmsprop_momentum = attrib(default=0.9, converter=float)
     rmsprop_alpha = attrib(default=0.95, converter=float)
+    is_cuda = attrib(default=False, converter=bool)
 
 
 @attrs
-class CopyTaskModelTraining(object):
+class CopyTaskModel(object):
     params = attrib(default=Factory(CopyTaskParams))
     net = attrib()
-    dataloader = attrib()
+    data_loader = attrib()
     criterion = attrib()
     optimizer = attrib()
 
@@ -76,19 +87,32 @@ class CopyTaskModelTraining(object):
     def default_net(self):
         # We have 1 additional input for the delimiter which is passed on a
         # separate "control" channel
-        net = NTM(self.params.sequence_width + 1, self.params.sequence_width,
-                  self.params.controller_size, self.params.controller_layers,
-                  self.params.num_read_heads, self.params.num_write_heads,
-                  self.params.memory_n, self.params.memory_m)
-        if CUDA:
+        network_params = NetworkParams(
+            memory=self.params.memory,
+            controller=self.params.controller,
+            num_inputs=self.params.sequence_width + 1,
+            num_outputs=self.params.sequence_width,
+            num_hidden=self.params.controller_layers,
+            num_layers=self.params.controller_layers,
+            controller_size=self.params.controller_size,
+            num_read_heads=self.params.num_read_heads,
+            num_write_heads=self.params.num_write_heads,
+            memory_size=self.params.memory_n,
+            word_size=self.params.memory_m,
+            memory_init=self.params.memory_init,
+            batch_size=self.params.batch_size,
+            is_cuda=self.params.is_cuda
+        )
+        net = NETWORKS[self.params.network](network_params)
+        if self.params.is_cuda:
             net = net.cuda()
         return net
 
-    @dataloader.default
+    @data_loader.default
     def default_dataloader(self):
-        return dataloader(self.params.num_batches, self.params.batch_size,
-                          self.params.sequence_width,
-                          self.params.sequence_min_len, self.params.sequence_max_len)
+        return data_loader(self.params.num_batches, self.params.batch_size,
+                           self.params.sequence_width,
+                           self.params.sequence_min_len, self.params.sequence_max_len)
 
     @criterion.default
     def default_criterion(self):
