@@ -14,13 +14,7 @@ from logger import *
 
 from torch.nn.parallel import data_parallel
 
-from tasks.copy_task import CopyTaskModelTraining, CopyTaskParams
-from tasks.repeatcopy_task import RepeatCopyTaskModelTraining, RepeatCopyTaskParams
-
-TASKS = {
-    'copy': (CopyTaskModelTraining, CopyTaskParams),
-    'repeat-copy': (RepeatCopyTaskModelTraining, RepeatCopyTaskParams)
-}
+from tasks.tasks import TASKS
 
 
 def update_model_params(params, update):
@@ -48,14 +42,13 @@ def update_model_params(params, update):
 
 def init_model(args):
     LOGGER.info("Training for the **%s** task", args.task)
-
-    model_cls, params_cls = TASKS[args.task]
-    params = params_cls()
+    task = TASKS[args.task]
+    params = task.param()
     params = update_model_params(params, args.param)
 
     LOGGER.info(params)
 
-    model = model_cls(params=params)
+    model = task.model(params=params)
     return model
 
 
@@ -201,4 +194,5 @@ def train_model(model, args):
 
         # Checkpoint
         if (checkpoint_interval != 0) and (batch_num % checkpoint_interval == 0):
-            save_checkpoint(model.net, model.params.name, batch_num, losses, costs, seq_lengths, repeats, checkpoint_path)
+            save_checkpoint(model.net, model.params.name, batch_num, losses, costs, seq_lengths, repeats,
+                            checkpoint_path)
