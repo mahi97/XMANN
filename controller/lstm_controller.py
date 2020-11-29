@@ -1,18 +1,16 @@
-import torch.nn as nn
+import torch
+import numpy as np
+from controller.base_controller import *
 
 
-class LSTMController(nn.Module):
-    def __init__(self, num_inputs, num_outputs, num_layers):
-        super(LSTMController, self).__init__()
+class LSTMController(BaseController):
+    def __init__(self, args):
+        super(LSTMController, self).__init__(args)
 
-        self.num_inputs = num_inputs
-        self.num_layers = num_layers
-        self.num_outputs = num_outputs
+        self.lstm = nn.LSTM(self.num_inputs, self.num_outputs, self.num_layers)
 
-        self.lstm = nn.LSTM(num_inputs, num_outputs, num_layers)
-
-        self.lstm_h = nn.Parameter(torch.randn(num_layers, 1, num_outputs) * 0.05)  # Why 0.05??
-        self.lstm_c = nn.Parameter(torch.randn(num_layers, 1, num_outputs) * 0.05)
+        self.lstm_h = nn.Parameter(torch.randn(self.num_layers, 1, self.num_outputs) * 0.05)
+        self.lstm_c = nn.Parameter(torch.randn(self.num_layers, 1, self.num_outputs) * 0.05)
 
         self.reset_parameters()
 
@@ -29,9 +27,6 @@ class LSTMController(nn.Module):
             else:
                 stdev = 5 / (np.sqrt(self.num_inputs + self.num_outputs))
                 nn.init.uniform_(p, -stdev, stdev)
-
-    def size(self):
-        return self.num_inputs, self.num_outputs
 
     def forward(self, x, prev_state):
         x = x.unsqueeze(0)

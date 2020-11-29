@@ -1,13 +1,10 @@
+from controller.base_controller import *
 import torch.nn as nn
 
 
-class FFController(nn.Module):
+class FFController(BaseController):
     def __init__(self, num_inputs, num_outputs, num_hidden):
-        super(FFController, self).__init__()
-
-        self.num_inputs = num_inputs
-        self.num_hidden = num_hidden
-        self.num_outputs = num_outputs
+        super(FFController, self).__init__(num_inputs, num_outputs, num_hidden)
 
         self.fc1 = nn.Linear(num_inputs, num_hidden)
         self.sigmoid = nn.Sigmoid()
@@ -21,8 +18,6 @@ class FFController(nn.Module):
         nn.init.xavier_uniform_(self.fc2.weight, gain=1.4)
         nn.init.normal_(self.fc2.bias, std=0.01)
 
-    def size(self):
-        return self.num_inputs, self.num_outputs
 
     def forward(self, x):
         out = self.fc1(x)
