@@ -1,9 +1,12 @@
 import argparse
 import argcomplete
+import torch
 
 import logger
 import utils
 import train
+
+from tasks.tasks import TASKS
 
 # Default values for program arguments
 RANDOM_SEED = 1000
@@ -40,6 +43,7 @@ def main():
 
     # Initialize arguments
     args = init_arguments()
+    args.GPU = args.GPU and torch.cuda.is_available()
 
     # Initialize random
     utils.init_seed(args.seed)
