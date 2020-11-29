@@ -8,7 +8,7 @@ import torch
 from torch import nn
 from torch import optim
 
-from network.networks import NETWORKS
+from model import *
 
 class RepeatCopyTask:
     def __init__(self):
@@ -75,7 +75,7 @@ def data_loader(num_batches, batch_size, seq_width, seq_min_len, seq_max_len, re
 @attrs
 class RepeatCopyTaskParams(object):
     name = attrib(default="recopy-task")
-    network = attrib(default='NTM', converter=str)
+    data_path = attrib(default='NTM', converter=str)
     controller_size = attrib(default=100, converter=int)
     controller_layers = attrib(default=1, converter=int)
     num_read_heads = attrib(default=1, converter=int)
@@ -106,10 +106,24 @@ class RepeatCopyTaskModel(object):
     @net.default
     def default_net(self):
         # See data_loader documentation
-        net = NETWORKS[self.params.network](self.params.sequence_width + 2, self.params.sequence_width + 1,
-                  self.params.controller_size, self.params.controller_layers,
-                  self.params.num_read_heads, self.params.num_write_heads,
-                  self.params.memory_n, self.params.memory_m)
+        model_params = ModelParams(
+            memory=self.params.memory,
+            controller=self.params.controller,
+            data_path=self.params.data_path,
+            num_inputs=self.params.sequence_width + 2,
+            num_outputs=self.params.sequence_width + 1,
+            num_hidden=self.params.controller_layers,
+            num_layers=self.params.controller_layers,
+            controller_size=self.params.controller_size,
+            num_read_heads=self.params.num_read_heads,
+            num_write_heads=self.params.num_write_heads,
+            memory_size=self.params.memory_n,
+            word_size=self.params.memory_m,
+            memory_init=self.params.memory_init,
+            batch_size=self.params.batch_size,
+            is_cuda=self.params.is_cuda
+        )
+        net = Model(model_params)
         if self.params.is_cuda:
             net = net.cuda()
         return net

@@ -8,8 +8,8 @@ import torch
 from torch import nn
 from torch import optim
 
-from network.networks import NETWORKS
-from network.base_network import NetworkParams
+from model import Model
+from model import ModelParams
 
 
 class CopyTask(object):
@@ -57,7 +57,7 @@ class CopyTaskParams(object):
     memory = attrib(default='static')
     memory_init = attrib(default='const')
     controller = attrib(default='LSTM')
-    network = attrib(default='NTM')
+    data_path = attrib(default='NTM')
     controller_size = attrib(default=100, converter=int)
     controller_layers = attrib(default=1, converter=int)
     num_read_heads = attrib(default=1, converter=int)
@@ -87,9 +87,10 @@ class CopyTaskModel(object):
     def default_net(self):
         # We have 1 additional input for the delimiter which is passed on a
         # separate "control" channel
-        network_params = NetworkParams(
+        model_params = ModelParams(
             memory=self.params.memory,
             controller=self.params.controller,
+            data_path=self.params.data_path,
             num_inputs=self.params.sequence_width + 1,
             num_outputs=self.params.sequence_width,
             num_hidden=self.params.controller_layers,
@@ -103,7 +104,7 @@ class CopyTaskModel(object):
             batch_size=self.params.batch_size,
             is_cuda=self.params.is_cuda
         )
-        net = NETWORKS[self.params.network](network_params)
+        net = Model(model_params)
         if self.params.is_cuda:
             net = net.cuda()
         return net
