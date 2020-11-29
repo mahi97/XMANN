@@ -1,49 +1,55 @@
-from network.base_network import *
-from memory.memories import MEMORIES
+from data_path.base_data_path import *
 
 import torch
 import torch.nn as nn
 
 
-class NTM(BaseNetwork):
+class NTM(BaseDataPath):
 
     def __init__(self, args):
-        """Initialize an NTM.
-        :param num_inputs: External number of inputs.
-        :param num_outputs: External number of outputs.
-        :param controller_size: The size of the internal representation.
-        :param controller_layers: Controller number of layers.
-        :param num_heads: Number of heads.
-        :param N: Number of rows in the memory bank.
-        :param M: Number of cols/features in the memory bank.
-        """
         super(NTM, self).__init__(args)
 
-        # controller = FFController(num_inputs + M*num_heads, controller_size, controller_layers)
-        heads = nn.ModuleList([ReadHead(memory, controller) for _ in range(num_read_heads)])
-        heads += [WriteHead(memory, controller) for _ in range(num_write_heads)]
+    def forward(self, x, prev_state):
+        """DataPath forward function.
+        :param x: input vector (batch_size x num_inputs)
+        :param prev_state: The previous state of the DataPath
+        """
+        # Unpack the previous state
+        prev_reads, prev_controller_state, prev_heads_states = prev_state
 
-        self.data_path = DataPath(num_inputs, num_outputs, controller, memory, heads)
-        self.memory = memory
-
-    def init_sequence(self, batch_size):
-        """Initializing the state."""
-        self.batch_size = batch_size
-        self.memory.reset(batch_size)
-        self.previous_state = self.data_path.create_new_state(batch_size)
-
-    def forward(self, x=None):
-        if x is None:
-            x = torch.zeros(self.batch_size, self.num_inputs)
-        if CUDA:
+        # Use the controller to get an embeddings
+        if self.is_cuda:
             x = x.cuda()
-        o, self.previous_state = self.data_path(x, self.previous_state)
-        return o, self.previous_state
+            for i in range(len(prev_reads)):
+                prev_reads[i] = prev_reads[i].cuda()
 
-    def calculate_num_params(self):
-        """Returns the total number of parameters."""
-        num_params = 0
-        for p in self.parameters():
-            num_params += p.data.view(-1).size(0)
+        inp = torch.cat([x] + prev_reads, dim=1)
+        if self.is_cuda:
+            inp = inp.cuda()
+        controller_outp, controller_state = self.controller(inp, prev_controller_state)
 
-        return num_params
+        # Read/Write from the list of heads
+        reads = []
+        heads_states = []
+        for head, prev_head_state in zip(self.heads, prev_heads_states):
+            if head.is_read_head():
+                r, head_state = head(controller_outp, prev_head_state)
+                if self.is_cuda:
+                    r = r.cuda()
+                    head_state = head_state.cuda()
+                reads += [r]
+            else:
+                head_state = head(controller_outp, prev_head_state)
+                if self.is_cuda:
+                    head_state = head_state.cuda()
+            heads_states += [head_state]
+
+        # Generate Output
+        inp2 = torch.cat([controller_outp] + reads, dim=1)
+        o = torch.sigmoid(self.fc(inp2))
+        # o = torch.sigmoid(self.fc(controller_outp))
+
+        # Pack the current state
+        state = (reads, controller_state, heads_states)
+
+        return o, state

@@ -1,9 +1,7 @@
-from network import NTM
-from network import DNC
-from network import MANN
+from data_path import ntm_data_path, mann_data_path, dnc_data_path
 
-NETWORKS = {
-    'NTM': NTM.NTM,
-    'DNC': DNC.DNC,
-    'MANN': MANN.MANN
+DATA_PATHS = {
+    'NTM': ntm_data_path.NTM,
+    'DNC': dnc_data_path.DNC,
+    'MANN': mann_data_path.MANN
 }
