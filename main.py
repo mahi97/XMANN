@@ -9,8 +9,8 @@ import train
 from tasks.tasks import TASKS
 
 # Default values for program arguments
-RANDOM_SEED = 1000
-REPORT_INTERVAL = 200
+RANDOM_SEED = 1
+REPORT_INTERVAL = 1000
 CHECKPOINT_INTERVAL = 1000
 
 
@@ -24,7 +24,7 @@ def init_arguments():
     parser.add_argument('--checkpoint-interval', type=int, default=CHECKPOINT_INTERVAL,
                         help="Checkpoint interval (default: {}). "
                              "Use 0 to disable checkpointing".format(CHECKPOINT_INTERVAL))
-    parser.add_argument('--checkpoint-path', action='store', default='./',
+    parser.add_argument('--checkpoint-path', action='store', default='./checkpoint/',
                         help="Path for saving checkpoint data (default: './')")
     parser.add_argument('--report-interval', type=int, default=REPORT_INTERVAL,
                         help="Reporting interval")
