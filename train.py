@@ -115,7 +115,7 @@ def train_batch(net, criterion, optimizer, X, Y, is_cuda=False):
     outp_seq_len, batch_size, _ = Y.size()
 
     # New sequence
-    net.init_sequence(batch_size)
+    net.init_sequence()
 
     # Feed the sequence + delimiter
     for i in range(inp_seq_len):
@@ -157,24 +157,24 @@ def train_batch(net, criterion, optimizer, X, Y, is_cuda=False):
     return loss.item(), cost.item() / batch_size
 
 
-def train_model(model, args):
+def train_model(task, args):
     report_interval = args.report_interval
     checkpoint_interval = args.checkpoint_interval
     checkpoint_path = args.checkpoint_path
     is_cuda = args.GPU
-    batch_size = model.params.batch_size
+    batch_size = task.params.batch_size
 
     losses = []
     costs = []
     seq_lengths = []
     repeats = []
     start_ms = get_ms()
-    for batch_num, x, y in model.dataloader:
+    for batch_num, x, y in task.data_loader:
         if is_cuda:
             x = x.cuda()
             y = y.cuda()
 
-        loss, cost = train_batch(model.net, model.criterion, model.optimizer, x, y)
+        loss, cost = train_batch(task.net, task.criterion, task.optimizer, x, y)
         losses += [loss]
         costs += [cost]
         seq_lengths += [y.size(0)]
@@ -194,5 +194,5 @@ def train_model(model, args):
 
         # Checkpoint
         if (checkpoint_interval != 0) and (batch_num % checkpoint_interval == 0):
-            save_checkpoint(model.net, model.params.name, batch_num, losses, costs, seq_lengths, repeats,
-                            checkpoint_path, seed)
+            save_checkpoint(task.net, task.params.name, batch_num, losses, costs, seq_lengths, repeats,
+                            checkpoint_path, args.seed)

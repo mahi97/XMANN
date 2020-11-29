@@ -4,9 +4,10 @@ import numpy as np
 import random
 from logger import *
 import json
-
+import os
 
 SEED = 1
+
 
 def get_ms():
     """Returns the current time in milliseconds."""
@@ -34,15 +35,14 @@ def progress_bar(batch_num, report_interval, last_loss):
     """Prints the progress until the next report."""
     progress = (((batch_num - 1) % report_interval) + 1) / report_interval
     fill = int(progress * 40)
-    print("\r[{}{}]: {} (Loss: {:.4f})".format(
-        "=" * fill, " " * (40 - fill), batch_num, last_loss), end='')
+    print("\r[{}{}]: {} (Loss: {:.4f})".format("=" * (fill - 1) + ">", " " * (40 - fill), batch_num, last_loss), end='')
 
 
-def save_checkpoint(net, name, batch_num, losses, costs, seq_lengths, repeats=1, checkpoint_path='./'):
-    global SEED
+def save_checkpoint(net, name, batch_num, losses, costs, seq_lengths, repeats=1, checkpoint_path='./', seed=-1):
     progress_clean()
-
-    basename = "{}/{}-{}-batch-{}".format(checkpoint_path, name, SEED, batch_num)
+    if not os.path.exists(checkpoint_path):
+        os.mkdir(checkpoint_path)
+    basename = "{}/{}-{}-batch-{}".format(checkpoint_path, name, seed, batch_num)
     model_fname = basename + ".model"
     print("Saving model checkpoint to: '{}'".format(model_fname))
     torch.save(net.state_dict(), model_fname)
