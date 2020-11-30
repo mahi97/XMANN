@@ -18,7 +18,7 @@ class AssociativeRecallTask:
 
 
 # Generator of randomized test sequences
-def data_loader(num_batches, batch_size, seq_width, seq_len, repeat_min, repeat_max):
+def data_loader(num_batches, batch_size, seq_width, seq_len, repeat_min, repeat_max, is_cuda):
     """Generator of random sequences for the Associative Recall task.
     Creates random batches of "bits" sequences.
     All the sequences within each batch have the same length.
@@ -69,7 +69,7 @@ def data_loader(num_batches, batch_size, seq_width, seq_len, repeat_min, repeat_
         outp = torch.zeros(seq_len, batch_size, seq_width + 2)
         outp[:, :, :seq_width] = answer.clone()
 
-        if CUDA:
+        if is_cuda:
             inp = inp.cuda()
             outp = outp.cuda()
 
@@ -79,7 +79,10 @@ def data_loader(num_batches, batch_size, seq_width, seq_len, repeat_min, repeat_
 @attrs
 class AssociativeRecallTaskParams(object):
     name = attrib(default="recall-task")
-    network = attrib(default='NTM', converter=str)
+    memory = attrib(default='static')
+    memory_init = attrib(default='random')
+    controller = attrib(default='LSTM')
+    data_path = attrib(default='NTM')
     controller_size = attrib(default=100, converter=int)
     controller_layers = attrib(default=1, converter=int)
     num_read_heads = attrib(default=1, converter=int)
@@ -90,7 +93,7 @@ class AssociativeRecallTaskParams(object):
     repeat_max = attrib(default=6, converter=int)
     memory_n = attrib(default=128, converter=int)
     memory_m = attrib(default=20, converter=int)
-    num_batches = attrib(default=50000, converter=int)
+    num_batches = attrib(default=100000, converter=int)
     batch_size = attrib(default=1, converter=int)
     rmsprop_lr = attrib(default=1e-4, converter=float)
     rmsprop_momentum = attrib(default=0.9, converter=float)
@@ -135,7 +138,8 @@ class AssociativeRecallTaskModel(object):
         return data_loader(self.params.num_batches,
                            self.params.batch_size,
                            self.params.sequence_width, self.params.sequence_len,
-                           self.params.repeat_min, self.params.repeat_max)
+                           self.params.repeat_min, self.params.repeat_max,
+                           self.params.is_cuda)
 
     @criterion.default
     def default_criterion(self):
