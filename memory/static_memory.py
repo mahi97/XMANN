@@ -17,12 +17,14 @@ class StaticMemory(BaseMemory):
         if self.init_mode == 'const':
             nn.init.constant_(self.mem_bias, 1e-6)
         elif self.init_mode == 'random':
-            std_dev = 1 / np.sqrt(N + M)
+            std_dev = 1 / np.sqrt(self.N + self.M)
             nn.init.uniform_(self.mem_bias, -std_dev, std_dev)
+
+        self.memory = None
+        self.prev_mem = None
 
     def reset(self):
         """Initialize memory from bias, for start-of-sequence."""
-        self.batch_size = self.batch_size
         self.memory = self.mem_bias.clone().repeat(self.batch_size, 1, 1)
 
     def read(self, address):
