@@ -18,15 +18,6 @@ from attr import attrs, attrib, Factory
 class Model(nn.Module):
 
     def __init__(self, args):
-        """Initialize an NTM.
-        :param num_inputs: External number of inputs.
-        :param num_outputs: External number of outputs.
-        :param controller_size: The size of the internal representation.
-        :param controller_layers: Controller number of layers.
-        :param num_heads: Number of heads.
-        :param N: Number of rows in the memory bank.
-        :param M: Number of cols/features in the memory bank.
-        """
         super(Model, self).__init__()
 
         self.num_inputs = args.num_inputs
@@ -47,21 +38,21 @@ class Model(nn.Module):
                                     is_cuda=args.is_cuda)
         self.memory = MEMORIES[args.memory](memory_param)
 
-        controller_params = ControllerParams(args.num_inputs + args.word_size * args.num_read_heads,
-                                             args.num_outputs,
-                                             args.num_hidden,
-                                             args.num_layers)
-        self.controller = CONTROLLERS[args.controller](controller_params)
+        controller_params = ControllerParams(num_inputs=args.num_inputs + (args.word_size * args.num_read_heads),
+                                             num_outputs=args.controller_size,
+                                             num_hidden=args.num_hidden,
+                                             num_layers=args.num_layers)
+        controller = CONTROLLERS[args.controller](controller_params)
 
-        head_params = HeadsParams(controller=self.controller, memory=self.memory, is_cuda=args.is_cuda)
-        self.heads = nn.ModuleList([HEADS[args.read_head](head_params) for _ in range(args.num_read_heads)])
-        self.heads += [HEADS[args.write_head](head_params) for _ in range(args.num_write_heads)]
+        head_params = HeadsParams(controller=controller, memory=self.memory, is_cuda=args.is_cuda)
+        heads = nn.ModuleList([HEADS[args.read_head](head_params) for _ in range(args.num_read_heads)])
+        heads += [HEADS[args.write_head](head_params) for _ in range(args.num_write_heads)]
 
         data_path_params = DataPathParams(num_inputs=self.num_inputs,
                                           num_outputs=self.num_outputs,
-                                          controller=self.controller,
+                                          controller=controller,
                                           memory=self.memory,
-                                          heads=self.heads,
+                                          heads=heads,
                                           is_cuda=args.is_cuda)
         self.data_path = DATA_PATHS[args.data_path](data_path_params)
 
