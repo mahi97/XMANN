@@ -10,6 +10,7 @@ from torch import optim
 
 from model import *
 
+
 class RepeatCopyTask:
     def __init__(self):
         self.model = RepeatCopyTaskModel
@@ -75,7 +76,10 @@ def data_loader(num_batches, batch_size, seq_width, seq_min_len, seq_max_len, re
 @attrs
 class RepeatCopyTaskParams(object):
     name = attrib(default="recopy-task")
-    data_path = attrib(default='NTM', converter=str)
+    memory = attrib(default='static')
+    memory_init = attrib(default='random')
+    controller = attrib(default='LSTM')
+    data_path = attrib(default='NTM')
     controller_size = attrib(default=100, converter=int)
     controller_layers = attrib(default=1, converter=int)
     num_read_heads = attrib(default=1, converter=int)
