@@ -58,7 +58,7 @@ def evaluate(net, criterion, X, Y, is_cuda=False):
     outp_seq_len, batch_size, _ = Y.size()
 
     # New sequence
-    net.init_sequence(batch_size)
+    net.init_sequence()
 
     # Feed the sequence + delimiter
     states = []
