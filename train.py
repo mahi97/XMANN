@@ -43,7 +43,7 @@ def update_model_params(params, update):
 def init_model(args):
     LOGGER.info("Training for the **%s** task", args.task)
     task = TASKS[args.task]
-    params = task.param()
+    params = task.param(is_cuda=args.GPU)
     params = update_model_params(params, args.param)
 
     LOGGER.info(params)
