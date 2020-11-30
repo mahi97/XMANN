@@ -55,7 +55,7 @@ def data_loader(num_batches, batch_size, seq_width, min_len, max_len, is_cuda=Fa
 class CopyTaskParams(object):
     name = attrib(default="copy-task")
     memory = attrib(default='static')
-    memory_init = attrib(default='const')
+    memory_init = attrib(default='random')
     controller = attrib(default='LSTM')
     data_path = attrib(default='NTM')
     controller_size = attrib(default=100, converter=int)
