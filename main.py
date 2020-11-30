@@ -17,17 +17,11 @@ CHECKPOINT_INTERVAL = 1000
 def init_arguments():
     parser = argparse.ArgumentParser(prog='main.py')
     parser.add_argument('--seed', type=int, default=RANDOM_SEED, help="Seed value for RNGs")
-    parser.add_argument('--task', action='store', choices=list(TASKS.keys()), default='copy',
-                        help="Choose the task to train (default: copy)")
-    parser.add_argument('-p', '--param', action='append', default=[],
-                        help='Override model params. Example: "-pbatch_size=4 -pnum_heads=2"')
-    parser.add_argument('--checkpoint-interval', type=int, default=CHECKPOINT_INTERVAL,
-                        help="Checkpoint interval (default: {}). "
-                             "Use 0 to disable checkpointing".format(CHECKPOINT_INTERVAL))
-    parser.add_argument('--checkpoint-path', action='store', default='./checkpoint/',
-                        help="Path for saving checkpoint data (default: './')")
-    parser.add_argument('--report-interval', type=int, default=REPORT_INTERVAL,
-                        help="Reporting interval")
+    parser.add_argument('--task', action='store', choices=list(TASKS.keys()), default='copy', help="Choose the task to train (default: copy)")
+    parser.add_argument('-p', '--param', action='append', default=[], help='Override model params. Example: "-pbatch_size=4 -pnum_heads=2"')
+    parser.add_argument('--checkpoint-interval', type=int, default=CHECKPOINT_INTERVAL, help="Checkpoint interval (default: {}). Use 0 to disable checkpointing".format(CHECKPOINT_INTERVAL))
+    parser.add_argument('--checkpoint-path', action='store', default='./checkpoint/', help="Path for saving checkpoint data (default: './')")
+    parser.add_argument('--report-interval', type=int, default=REPORT_INTERVAL, help="Reporting interval")
     parser.add_argument('--GPU', action='store_true', default=False, help="Use GPU")
 
     argcomplete.autocomplete(parser)
