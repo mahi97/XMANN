@@ -14,6 +14,10 @@ class BaseHead(nn.Module):
         self.M = self.memory.M
         self.N = self.memory.N
         self.is_cuda = args.is_cuda
+        self.batch_size = args.batch_size
+        self.id = args.id
+        self.num_read_heads = args.num_read_heads
+        self.num_write_heads = args.num_write_heads
 
     def create_new_state(self, batch_size):
         raise NotImplementedError
@@ -26,18 +30,6 @@ class BaseHead(nn.Module):
 
     def is_read_head(self):
         return NotImplementedError
-
-    def _address_memory(self, k, B, g, s, L, w_prev):
-        # Handle Activations
-        k = torch.tanh(k)
-        B = F.softplus(B)
-        g = torch.sigmoid(g)
-        s = F.softmax(s, dim=1)
-        L = 1 + F.softplus(L)
-
-        w = self.memory.address(k, B, g, s, L, w_prev)
-
-        return w
 
 
 def split_cols(mat, lengths):
@@ -55,3 +47,7 @@ class HeadsParams(object):
     controller = attrib(default=None)
     memory = attrib(default=None)
     is_cuda = attrib(default=False, converter=bool)
+    batch_size = attrib(default=1, converter=int)
+    num_read_heads = attrib(default=1, converter=int)
+    num_write_heads = attrib(default=1, converter=int)
+    id = attrib(default=0, converter=int)
