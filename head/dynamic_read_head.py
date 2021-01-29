@@ -8,8 +8,9 @@ class DynamicReadHead(DynamicHead):
         self.num_heads = args.num_read_heads
         self.num_modes = args.num_read_modes
         # Corresponding to k, β, free_gate, read_mode sizes from the paper
-        self.read_vector = [self.M, 1, self.num_heads * 1, self.num_heads * self.num_modes]
-        self.fc_read = nn.Linear(self.ctrl_size, sum(self.read_vector))
+        self.vector = [self.M, 1, 1, self.num_modes]
+        self.read_vector = self.vector * self.num_read_heads
+        self.fc_read = nn.Linear(self.ctrl_size, sum(self.vector))
 
         # functional components
         self.usage_vb = None  # for dynamic allocation, init in _reset
@@ -73,9 +74,9 @@ class DynamicReadHead(DynamicHead):
 
     def forward(self, x, last_w):
         out = self.fc_read(x)
-        k, b, free_gate, read_modes = split_cols(out, self.read_vector)
+        size = len(self.vector)
+        segment = self.id * size
+        k, b, free_gate, read_modes = split_cols(out, self.read_vector[segment: segment + size])
         w = self.address(k, b, self.num_heads, read_modes, last_w)
-
-        r = self.memory.read(w, F.sigmoid(free_gate).view(-1, self.num_heads, 1))
-
+        r = self.memory.read(w, F.sigmoid(free_gate))
         return r, w
