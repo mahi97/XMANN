@@ -36,7 +36,7 @@ class Model(nn.Module):
                                     init_mode=args.memory_init,
                                     batch_size=args.batch_size,
                                     is_cuda=args.is_cuda)
-        self.memory = MEMORIES[args.memory](memory_param)
+        memory = MEMORIES[args.memory](memory_param)
 
         controller_params = ControllerParams(num_inputs=args.num_inputs + (args.word_size * args.num_read_heads),
                                              num_outputs=args.controller_size,
@@ -44,16 +44,28 @@ class Model(nn.Module):
                                              num_layers=args.num_layers)
         controller = CONTROLLERS[args.controller](controller_params)
 
-        head_params = HeadsParams(controller=controller, memory=self.memory, is_cuda=args.is_cuda)
-        heads = nn.ModuleList([HEADS[args.read_head](head_params) for _ in range(args.num_read_heads)])
-        heads += [HEADS[args.write_head](head_params) for _ in range(args.num_write_heads)]
+        head_params = HeadsParams(controller=controller,
+                                  memory=memory,
+                                  is_cuda=args.is_cuda,
+                                  batch_size=args.batch_size,
+                                  num_read_heads=args.num_read_heads,
+                                  num_write_heads=args.num_write_heads)
+        rd_heads = nn.ModuleList([HEADS[args.read_head](head_params) for _ in range(args.num_read_heads)])
+        wr_heads = nn.ModuleList([HEADS[args.write_head](head_params) for _ in range(args.num_write_heads)])
+        for i, head in enumerate(rd_heads):
+            head.id = i
+        for i, head in enumerate(wr_heads):
+            head.id = i
 
+        heads = rd_heads.extend(wr_heads)
         data_path_params = DataPathParams(num_inputs=self.num_inputs,
                                           num_outputs=self.num_outputs,
                                           controller=controller,
-                                          memory=self.memory,
+                                          memory=memory,
                                           heads=heads,
-                                          is_cuda=args.is_cuda)
+                                          is_cuda=args.is_cuda,
+                                          num_read_heads=args.num_read_heads,
+                                          num_write_heads=args.num_write_heads)
         self.data_path = DATA_PATHS[args.data_path](data_path_params)
 
         self.previous_state = None
@@ -67,7 +79,6 @@ class Model(nn.Module):
 
     def init_sequence(self):
         """Initializing the state."""
-        self.memory.reset()
         self.previous_state = self.data_path.create_new_state(self.batch_size)
 
     def forward(self, x=None):
