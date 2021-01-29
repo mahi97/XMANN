@@ -42,15 +42,15 @@ class DynamicReadHead(DynamicHead):
         return wc
 
     def location_address(self, wc, num_head, read_mode, last_address):
-        forward_weights = self.memory.directional_read_weights(num_head, True, last_address)
-        backward_weights = self.memory.directional_read_weights(num_head, False, last_address)
-        backward_mode = read_mode[:, :, :num_head]
-        forward_mode = read_mode[:, :, num_head: num_head * 2]
-        content_mode = read_mode[:, :, 2 * num_head:]
+        forward_weights = self.memory.directional_read_weights(True, last_address)
+        backward_weights = self.memory.directional_read_weights(False, last_address)
+        backward_mode = read_mode[:, 0]
+        forward_mode  = read_mode[:, 1]
+        content_mode  = read_mode[:, 2]
 
-        wl = content_mode.expand_as(wc) * wc \
-            + torch.sum(forward_mode.unsqeeze(3).expand_as(forward_weights) * forward_weights, 2) \
-            + torch.sum(backward_mode.unsqueeze(3).expand_as(backward_weights) * backward_weights, 2)
+        wl = content_mode.expand_as(wc) * wc
+        wl += torch.sum(forward_mode.unsqueeze(1).expand_as(forward_weights) * forward_weights, -1)
+        wl += torch.sum(backward_mode.unsqueeze(1).expand_as(backward_weights) * backward_weights, -1)
 
         return wl
 
