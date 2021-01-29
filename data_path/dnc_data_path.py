@@ -37,7 +37,7 @@ class DNC(BaseDataPath):
                     head_state = head_state.cuda()
                 reads += [r]
             else:
-                head_state = head(controller_out, prev_head_state)
+                head_state = head(controller_out)
                 if self.is_cuda:
                     head_state = head_state.cuda()
             heads_states += [head_state]
