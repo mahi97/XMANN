@@ -12,6 +12,8 @@ class BaseMemory(nn.Module):
         self.init_mode = args.init_mode
         self.batch_size = args.batch_size
         self.is_cuda = args.is_cuda
+        self.num_write_heads = args.num_write_heads
+        self.num_read_heads = args.num_read_heads
 
     def size(self):
         return self.N, self.M
@@ -34,3 +36,5 @@ class MemoryParams(object):
     init_mode = attrib(default='const')
     batch_size = attrib(default=1, converter=int)
     is_cuda = attrib(default=False, converter=bool)
+    num_read_heads = attrib(default=1, converter=int)
+    num_write_heads = attrib(default=1, converter=int)

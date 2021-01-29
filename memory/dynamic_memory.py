@@ -24,9 +24,9 @@ class DynamicMemory(BaseMemory):
         self.prev_mem = None
 
         # reset internal states
-        self.usage = torch.zeros(self.batch_size, self.mem_hei)
-        self.link = torch.zeros(self.batch_size, self.write_head_params.num_heads, self.mem_hei, self.mem_hei)
-        self.preced = torch.zeros(self.batch_size, self.write_head_params.num_heads, self.mem_hei)
+        self.usage = torch.zeros(self.batch_size, self.N)
+        self.link = torch.zeros(self.batch_size, self.num_write_heads, self.N, self.N)
+        self.preced = torch.zeros(self.batch_size, self.num_write_heads, self.N)
 
     def reset(self):
         """Initialize memory from bias, for start-of-sequence."""
@@ -55,7 +55,7 @@ class DynamicMemory(BaseMemory):
 
         self._update_write_usage(address)
         self._update_link(address)
-        self._update_precedence_weights()
+        self._update_precedence_weights(address)
 
     def _update_read_usage(self, address, free_gate):
         """
@@ -104,15 +104,15 @@ class DynamicMemory(BaseMemory):
             link_vb:        [batch_size x num_heads x mem_hei x mem_hei]
                          -> {L_t}, current link graph
         """
-        write_weights_i_vb = address.unsqueeze(3).expand_as(self.link)
-        write_weights_j_vb = address.unsqueeze(2).expand_as(self.link)
-        prev_preced_j_vb = self.preced.unsqueeze(2).expand_as(self.link)
+        write_weights_i_vb = address.unsqueeze(2).expand_as(self.link)
+        write_weights_j_vb = address.unsqueeze(1).expand_as(self.link)
+        prev_preced_j_vb = self.preced.unsqueeze(1).expand_as(self.link)
         prev_link_scale_vb = 1 - write_weights_i_vb - write_weights_j_vb
         new_link_vb = write_weights_i_vb * prev_preced_j_vb
         link_vb = prev_link_scale_vb * self.link + new_link_vb
         # Return the link with the diagonal set to zero, to remove self-looping edges.
         # TODO: set diag as 0 if there's a specific method to do that w/ later releases
-        diag_mask_vb = (1 - torch.eye(self.mem_hei).unsqueeze(0).unsqueeze(0).expand_as(link_vb)).type(self.dtype)
+        diag_mask_vb = 1 - torch.eye(self.N).unsqueeze(0).unsqueeze(0).expand_as(link_vb)
         link_vb = link_vb * diag_mask_vb
         return link_vb
 
@@ -130,10 +130,10 @@ class DynamicMemory(BaseMemory):
             preced_vb:      [batch_size x num_write_heads x mem_hei]
         """
         # write_sum_vb = torch.sum(self.wl_curr_vb, 2)              # 0.1.12
-        write_sum_vb = torch.sum(address, 2, keepdim=True)  # 0.2.0
+        write_sum_vb = torch.sum(address, 1, keepdim=True)  # 0.2.0
         return (1 - write_sum_vb).expand_as(self.preced) * self.preced + address
 
-    def directional_read_weights(self, num_write_heads, num_read_heads, forward, last_address):
+    def directional_read_weights(self, forward, last_address):
         """
         calculates the forward or the backward read weights
         for each read head (at a given address), there are `num_writes` link
@@ -157,9 +157,9 @@ class DynamicMemory(BaseMemory):
             directional_weights_vb: [batch_size x mem_hei]
         """
         if forward:
-            directional_weights = torch.bmm(last_address, self.link_vb.view(-1, self.N, self.N).transpose(1, 2))
+            directional_weights = torch.bmm(last_address.unsqueeze(1), self.link.view(-1, self.N, self.N).transpose(1, 2))
         else:
-            directional_weights = torch.bmm(last_address, self.link_vb.view(-1, self.N, self.N))
+            directional_weights = torch.bmm(last_address.unsqueeze(1), self.link.view(-1, self.N, self.N))
         return directional_weights.transpose(1, 2)
 
     def _allocation(self, epsilon=1e-6):
@@ -211,8 +211,8 @@ class DynamicMemory(BaseMemory):
         # update usage to take into account writing to this new allocation
         # NOTE: checked: if not operate directly on _vb.data, then the _vb
         # NOTE: outside of this func will not change
-        self.usage += (1 - self.usage) * self.write_gate[:, :].expand_as(self.usage) * alloc_weight
+        self.usage += (1 - self.usage) * write_gate[:, :].expand_as(self.usage) * alloc_weight
         # pack the allocation weights for write heads into one tensor
-        w = self.write_gate.expand_as(alloc_weight) * (self.alloc_gate.expand_as(self.wc_vb) * alloc_weight
-                                                       + (1. - self.alloc_gate_vb.expand_as(self.wc_vb)) * self.wc_vb)
+        w = write_gate.expand_as(alloc_weight) * (alloc_gate.expand_as(wc) * alloc_weight
+                                                       + (1. - alloc_gate.expand_as(wc)) * wc)
         return w
