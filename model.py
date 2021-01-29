@@ -92,16 +92,16 @@ class Model(nn.Module):
 
 @attrs
 class ModelParams(object):
-    memory = attrib(default='static')
+    memory = attrib(default='dynamic')
     controller = attrib(default='LSTM')
-    data_path = attrib(default='NTM')
+    data_path = attrib(default='DNC')
     num_inputs = attrib(default=-1, converter=int)
     num_outputs = attrib(default=-1, converter=int)
     num_hidden = attrib(default=-1, converter=int)
     num_layers = attrib(default=-1, converter=int)
     controller_size = attrib(default=-1, converter=int)
-    read_head = attrib(default='static-read')
-    write_head = attrib(default='static-write')
+    read_head = attrib(default='dynamic-read')
+    write_head = attrib(default='dynamic-write')
     num_read_heads = attrib(default=-1, converter=int)
     num_write_heads = attrib(default=-1, converter=int)
     memory_size = attrib(default=-1, converter=int)
