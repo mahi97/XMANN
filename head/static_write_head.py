@@ -1,13 +1,14 @@
-from head.base_head import *
+from head.static_head import *
 
 
-class StaticWriteHead(BaseHead):
+class StaticWriteHead(StaticHead):
     def __init__(self, args):
         super(StaticWriteHead, self).__init__(args)
 
-        #                     K, B, G, S, L, add, erase
-        self.write_vector = [self.M, 1, 1, 3, 1, self.M, self.M]
-        self.fc_write = nn.Linear(self.ctrl_size, sum(self.write_vector))
+        # Corresponding to K, B, G, S, L, add, erase
+        self.vector = [self.M, 1, 1, 3, 1, self.M, self.M]
+        self.write_vector = self.vector * self.num_write_heads
+        self.fc_write = nn.Linear(self.ctrl_size, sum(self.vector))
         self.reset_parameters()
 
     def create_new_state(self, batch_size):
@@ -23,9 +24,11 @@ class StaticWriteHead(BaseHead):
     def is_read_head(self):
         return False
 
-    def forward(self, input, last_w):
-        out = self.fc_write(input)
-        K, B, G, S, L, A, E = split_cols(out, self.write_vector)
-        w = self._address_memory(K, B, G, S, L, last_w)
+    def forward(self, x, last_w):
+        out = self.fc_write(x)
+        size = len(self.vector)
+        segment = self.id * size
+        K, B, G, S, L, A, E = split_cols(out, self.write_vector[segment: segment + size])
+        w = self.address(K, B, G, S, L, last_w)
         self.memory.write(w, torch.sigmoid(E), torch.tanh(A))
         return w
