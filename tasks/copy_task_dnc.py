@@ -12,7 +12,7 @@ from model import Model
 from model import ModelParams
 
 
-class CopyTask(object):
+class CopyTaskDNC(object):
     def __init__(self):
         self.model = CopyTaskModel
         self.param = CopyTaskParams
@@ -54,10 +54,10 @@ def data_loader(num_batches, batch_size, seq_width, min_len, max_len, is_cuda=Fa
 @attrs
 class CopyTaskParams(object):
     name = attrib(default="copy-task")
-    memory = attrib(default='dynamic')
+    memory = attrib(default='static')
     memory_init = attrib(default='random')
     controller = attrib(default='LSTM')
-    data_path = attrib(default='DNC')
+    data_path = attrib(default='NTM')
     controller_size = attrib(default=100, converter=int)
     controller_layers = attrib(default=1, converter=int)
     num_read_heads = attrib(default=2, converter=int)
