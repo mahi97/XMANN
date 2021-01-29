@@ -51,3 +51,4 @@ class HeadsParams(object):
     num_read_heads = attrib(default=1, converter=int)
     num_write_heads = attrib(default=1, converter=int)
     id = attrib(default=0, converter=int)
+    num_read_modes = attrib(default=3, converter=int)
