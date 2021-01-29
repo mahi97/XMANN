@@ -19,7 +19,7 @@ class BaseMemory(nn.Module):
     def reset(self):
         raise NotImplementedError('Not Implemented in base class')
 
-    def read(self, address):
+    def read(self, address, free_gate=None):
         raise NotImplementedError('Not Implemented in base class')
 
     def write(self, address, erase_vector, add_vector):
