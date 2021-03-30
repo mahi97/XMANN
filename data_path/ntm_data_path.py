@@ -41,7 +41,8 @@ class NTM(BaseDataPath):
             else:
                 head_state = head(controller_out, prev_head_state)
                 if self.is_cuda:
-                    head_state = head_state.cuda()
+                    a = head_state[0]
+                    head_state = (a.cuda(), head_state[1], head_state[2])
             heads_states += [head_state]
 
         # Generate Output

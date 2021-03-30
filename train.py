@@ -62,14 +62,15 @@ def evaluate(net, criterion, X, Y, is_cuda=False):
 
     # Feed the sequence + delimiter
     states = []
+    mems = []
 
     for i in range(inp_seq_len):
         if is_cuda:
-            o, state = data_parallel(net, X[i])
+            o, state, mem = data_parallel(net, X[i], device_ids=[6])
         else:
-            o, state = net(X[i])
+            o, state, mem = net(X[i])
         states += [state]
-
+        mems += [mem.clone()]
     if is_cuda:
         X = X.cuda()
         Y = Y.cuda()
@@ -81,11 +82,11 @@ def evaluate(net, criterion, X, Y, is_cuda=False):
 
     for i in range(outp_seq_len):
         if is_cuda:
-            y_out[i], state = data_parallel(net, None)
+            y_out[i], state, mem = data_parallel(net, None, device_ids=[6])
         else:
-            y_out[i], state = net()
+            y_out[i], state, mem = net()
         states += [state]
-
+        mems += [mem.clone()]
     loss = criterion(y_out, Y)
 
     if is_cuda:
@@ -102,13 +103,14 @@ def evaluate(net, criterion, X, Y, is_cuda=False):
         'cost': cost / batch_size,
         'y_out': y_out,
         'y_out_binarized': y_out_binarized,
-        'states': states
+        'states': states,
+        'mems': mems
     }
 
     return result
 
 
-def train_batch(net, criterion, optimizer, X, Y, is_cuda=False):
+def train_batch(net, criterion, optimizer, X, Y, is_cuda=True):
     """Trains a single batch."""
     optimizer.zero_grad()
     inp_seq_len = X.size(0)
@@ -120,7 +122,7 @@ def train_batch(net, criterion, optimizer, X, Y, is_cuda=False):
     # Feed the sequence + delimiter
     for i in range(inp_seq_len):
         if is_cuda:
-            data_parallel(net, X[i])
+            data_parallel(net, X[i], device_ids=[6])
         else:
             net(X[i])
 
@@ -132,9 +134,9 @@ def train_batch(net, criterion, optimizer, X, Y, is_cuda=False):
     y_out = torch.zeros(Y.size())
     for i in range(outp_seq_len):
         if is_cuda:
-            y_out[i], _ = data_parallel(net, None)
+            y_out[i], _, _ = data_parallel(net, None, device_ids=[6])
         else:
-            y_out[i], _ = net()
+            y_out[i], _, _ = net()
 
     if is_cuda:
         Y = Y.cuda()

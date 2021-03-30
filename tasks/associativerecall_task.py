@@ -80,7 +80,7 @@ def data_loader(num_batches, batch_size, seq_width, seq_len, repeat_min, repeat_
 class AssociativeRecallTaskParams(object):
     name = attrib(default="recall-task")
     memory = attrib(default='static')
-    memory_init = attrib(default='random')
+    memory_init = attrib(default='const')
     controller = attrib(default='LSTM')
     data_path = attrib(default='NTM')
     controller_size = attrib(default=100, converter=int)
@@ -93,7 +93,7 @@ class AssociativeRecallTaskParams(object):
     repeat_max = attrib(default=6, converter=int)
     memory_n = attrib(default=128, converter=int)
     memory_m = attrib(default=20, converter=int)
-    num_batches = attrib(default=100000, converter=int)
+    num_batches = attrib(default=300000, converter=int)
     batch_size = attrib(default=1, converter=int)
     rmsprop_lr = attrib(default=1e-4, converter=float)
     rmsprop_momentum = attrib(default=0.9, converter=float)
