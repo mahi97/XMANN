@@ -29,6 +29,8 @@ class StaticWriteHead(StaticHead):
         size = len(self.vector)
         segment = self.id * size
         K, B, G, S, L, A, E = split_cols(out, self.write_vector[segment: segment + size])
-        w = self.address(K, B, G, S, L, last_w)
-        self.memory.write(w, torch.sigmoid(E), torch.tanh(A))
-        return w
+        w = self.address(K, B, G, S, L, last_w[0])
+        A = torch.tanh(A)
+        E = torch.sigmoid(E)
+        self.memory.write(w, E, A)
+        return w, E, A

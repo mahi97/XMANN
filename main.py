@@ -22,7 +22,7 @@ def init_arguments():
     parser.add_argument('--checkpoint-interval', type=int, default=CHECKPOINT_INTERVAL, help="Checkpoint interval (default: {}). Use 0 to disable checkpointing".format(CHECKPOINT_INTERVAL))
     parser.add_argument('--checkpoint-path', action='store', default='./checkpoint/', help="Path for saving checkpoint data (default: './')")
     parser.add_argument('--report-interval', type=int, default=REPORT_INTERVAL, help="Reporting interval")
-    parser.add_argument('--GPU', action='store_true', default=False, help="Use GPU")
+    parser.add_argument('--GPU', action='store_true', default=True, help="Use GPU")
 
     argcomplete.autocomplete(parser)
 
@@ -38,7 +38,8 @@ def main():
     # Initialize arguments
     args = init_arguments()
     args.GPU = args.GPU and torch.cuda.is_available()
-
+    if args.GPU:
+        torch.cuda.set_device(6)
     # Initialize random
     utils.init_seed(args.seed)
 

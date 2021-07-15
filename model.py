@@ -87,7 +87,7 @@ class Model(nn.Module):
         if self.is_cuda:
             x = x.cuda()
         o, self.previous_state = self.data_path(x, self.previous_state)
-        return o, self.previous_state
+        return o, self.previous_state, self.data_path.memory.memory
 
 
 @attrs
