@@ -27,8 +27,9 @@ class StaticMemory(BaseMemory):
         """Initialize memory from bias, for start-of-sequence."""
         self.memory = self.mem_bias.clone().repeat(self.batch_size, 1, 1)
 
-    def read(self, address):
+    def read(self, address, free_gate=None):
         """
+        :param free_gate: Nothing
         :param address: Batched Tensor with Size of batch_size * N, contain value between 0 and 1 with sum equals to 1
         :return: Torch batched tensor with Size of batch_size * M, produce by sum over weighted elements of Memory
         """

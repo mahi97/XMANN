@@ -34,10 +34,10 @@ class BaseDataPath(nn.Module):
         self.num_read_heads = args.num_read_heads
         self.num_write_heads = args.num_write_heads
         self.init_r = []
-        for head in self.heads:
+        for i, head in enumerate(self.heads):
             if head.is_read_head():
                 init_r_bias = torch.randn(1, self.M) * 0.01
-                self.register_buffer("read{}_bias".format(self.num_read_heads), init_r_bias.data)
+                self.register_buffer("read{}_bias".format(i), init_r_bias.data)
                 self.init_r += [init_r_bias]
                 # head.id = self.num_read_heads
                 # self.num_read_heads += 1

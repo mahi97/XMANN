@@ -13,12 +13,12 @@ class DynamicMemory(BaseMemory):
 
         # The memory bias allows the heads to learn how to initially address
         # memory locations by content
-        self.register_buffer('mem_bias', torch.Tensor(self.N, self.M))
+        self.register_buffer('mem', torch.Tensor(self.N, self.M))
         if self.init_mode == 'const':
-            nn.init.constant_(self.mem_bias, 1e-6)
+            nn.init.constant_(self.mem, 1e-6)
         elif self.init_mode == 'random':
             std_dev = 1 / np.sqrt(self.N + self.M)
-            nn.init.uniform_(self.mem_bias, -std_dev, std_dev)
+            nn.init.uniform_(self.mem, -std_dev, std_dev)
 
         self.memory = None
         self.prev_mem = None
@@ -30,7 +30,7 @@ class DynamicMemory(BaseMemory):
 
     def reset(self):
         """Initialize memory from bias, for start-of-sequence."""
-        self.memory = self.mem_bias.clone().repeat(self.batch_size, 1, 1)
+        self.memory = self.mem.clone().repeat(self.batch_size, 1, 1)
 
     def read(self, address, free_gate=None):
         """
@@ -41,21 +41,24 @@ class DynamicMemory(BaseMemory):
         content = address.unsqueeze(1).matmul(self.memory).squeeze(1)
 
         self.usage = self._update_read_usage(address, free_gate)
-
+        # print('READ:', content)
         return content
 
     def write(self, address, erase_vector, add_vector):
+        # print('WRITE: ', self.memory)
         self.prev_mem = self.memory
         self.memory = torch.Tensor(self.batch_size, self.N, self.M)
         if self.is_cuda:
             self.memory = self.memory.cuda()
+        print('ADD: ', add_vector)
+        print('ERA: ', erase_vector)
         erase = torch.matmul(address.unsqueeze(-1), erase_vector.unsqueeze(1))
         add = torch.matmul(address.unsqueeze(-1), add_vector.unsqueeze(1))
         self.memory = self.prev_mem * (1 - erase) + add
-
         self._update_write_usage(address)
         self._update_link(address)
         self._update_precedence_weights(address)
+        # print('WRITE: ', self.memory)
 
     def _update_read_usage(self, address, free_gate):
         """

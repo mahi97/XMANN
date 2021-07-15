@@ -78,5 +78,5 @@ class DynamicReadHead(DynamicHead):
         segment = self.id * size
         k, b, free_gate, read_modes = split_cols(out, self.read_vector[segment: segment + size])
         w = self.address(k, b, self.num_heads, read_modes, last_w)
-        r = self.memory.read(w, F.sigmoid(free_gate))
+        r = self.memory.read(w, torch.sigmoid(free_gate))
         return r, w
